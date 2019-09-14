@@ -17,10 +17,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |node_config|
     centos6.vm.provider 'virtualbox' do |vbox|
       vbox.name = Dir.pwd.split('/').last + '_' + centos6.vm.hostname
     end
-    centos6.vm.provision 'ansible' do |ansible|
-      ansible.playbook   = "example.yml"
-      ansible.become = true
-    end
   end
 
   node_config.vm.define 'centos7' do |centos7|
@@ -29,10 +25,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |node_config|
     centos7.vm.hostname = 'centos7'
     centos7.vm.provider 'virtualbox' do |vbox|
       vbox.name = Dir.pwd.split('/').last + '_' + centos7.vm.hostname
-    end
-    centos7.vm.provision 'ansible' do |ansible|
-      ansible.playbook   = "example.yml"
-      ansible.become = true
     end
   end
 
@@ -43,10 +35,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |node_config|
     fedora29.vm.provider 'virtualbox' do |vbox|
       vbox.name = Dir.pwd.split('/').last + '_' + fedora29.vm.hostname
     end
-    fedora29.vm.provision 'ansible' do |ansible|
-      ansible.playbook   = "example.yml"
-      ansible.become = true
-    end
   end
 
   node_config.vm.define 'ubuntu' do |ubuntu|
@@ -55,10 +43,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |node_config|
     ubuntu.vm.hostname = 'ubuntu'
     ubuntu.vm.provider 'virtualbox' do |vbox|
       vbox.name = Dir.pwd.split('/').last + '_' + ubuntu.vm.hostname
-    end
-    ubuntu.vm.provision 'ansible' do |ansible|
-      ansible.playbook   = "example.yml"
-      ansible.become = true
     end
   end
 
@@ -69,10 +53,35 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |node_config|
     amazon.vm.provider 'virtualbox' do |vbox|
       vbox.name = Dir.pwd.split('/').last + '_' + amazon.vm.hostname
     end
-    amazon.vm.provision 'ansible' do |ansible|
-      ansible.playbook   = "example.yml"
-      ansible.become = true
-    end
   end
 
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |ansible_config|
+   ansible_config.vm.define 'deploy' do |deploy|
+     deploy.vm.box = 'centos/7'
+     deploy.vm.network 'private_network', ip: '10.0.0.20'
+     deploy.vm.hostname = 'deploy'
+     deploy.vm.provision 'shell', path: 'provision.sh'
+     deploy.vm.provision 'file', source: '.vagrant', destination: '/vagrant/.vagrant'
+     deploy.vm.provision 'file', source: '~/.vagrant.d/insecure_private_key', destination: '~/.ssh/key'
+     deploy.vm.synced_folder '.', '/vagrant', type: 'rsync'
+     deploy.ssh.insert_key = false
+
+     deploy.vm.provision 'ansible_local' do |ansible|
+       ansible.playbook       = "/vagrant/example.yml"
+       ansible.verbose        = 'vv'
+       ansible.install        = true
+       ansible.limit          = "all" # or only "nodes" group, etc.
+       ansible.inventory_path = "/vagrant/inventory"
+       ansible.config_file = '/vagrant/ansible.cfg'
+       ansible.install_mode = 'pip'
+       ansible.version = '2.7.5'
+       ansible.become = true
+       ansible.vault_password_file = ''
+       ansible.raw_arguments = [
+         '--private-key=~/.ssh/key',
+     ]
+     end
+   end
+
 end
+
