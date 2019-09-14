@@ -1,0 +1,12 @@
+[multi]
+deploy       ansible_connection=local
+centos6      ansible_ssh_host=10.0.0.10
+centos7      ansible_ssh_host=10.0.0.11
+fedora29     ansible_ssh_host=10.0.0.12
+ubuntu       ansible_ssh_host=10.0.0.13
+amazon       ansible_ssh_host=10.0.0.14
+
+[multi:vars]
+ansible_port=22
+ansible_user=vagrant
+#ansible_ssh_private_key_file=~/.vagrant.d/insecure_private_key
